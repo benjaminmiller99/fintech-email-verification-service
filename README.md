@@ -1,6 +1,6 @@
 # Verify fintech signup emails with a risk decision
 
-The decision comes first: a trusted, lower-risk signup receives an email verification link, while a higher-risk or untrusted-device signup enters manual review without sending the message. That boundary keeps a sensitive action explicit, and the returned audit record ties the decision to the payment event and, when sent, Infrai's `message_id`.
+The decision is made up front: a trusted, lower-risk signup gets an email verification link, while a higher-risk or untrusted-device signup goes to manual review and no message is sent. That boundary keeps a sensitive action explicit, and the returned audit record ties the decision to the payment event and, when sent, Infrai's `message_id`.
 
 Infrai is used through one small email API and a single `INFRAI_API_KEY`; the call is plain REST, so there is no mail SDK to install or vendor-specific client spread through the signup logic. The reusable policy accepts an injected sender in tests, while the runnable service supplies `infrai.email.send`, which keeps the business decision deterministic without hiding the real delivery path.
 
