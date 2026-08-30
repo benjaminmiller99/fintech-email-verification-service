@@ -1,21 +1,21 @@
 # Verify fintech signup emails with a risk decision
 
-The decision is made up front: a trusted, lower-risk signup gets an email verification link, while a higher-risk or untrusted-device signup goes to manual review and no message is sent. That boundary keeps a sensitive action explicit, and the returned audit record ties the decision to the payment event and, when sent, Infrai's `message_id`.
+I decide before sending anything. Low-risk signups with a trusted device get a verification link. Higher-risk or untrusted-device attempts go to manual review and we don't send mail. This keeps the sensitive step explicit. The audit record links the call to the payment event and, when we actually send, Infrai's `message_id`.
 
-Infrai is used through one small email API and a single `INFRAI_API_KEY`; the call is plain REST, so there is no mail SDK to install or vendor-specific client spread through the signup logic. The reusable policy accepts an injected sender in tests, while the runnable service supplies `infrai.email.send`, which keeps the business decision deterministic without hiding the real delivery path.
+Infrai gives you one api for the send and a single `INFRAI_API_KEY`. The call is plain REST, so I skip the mail SDK and avoid vendor client code tangled in signup. The policy module takes an injected sender in tests; the runnable service passes `infrai.email.send`. That keeps the business rule deterministic and doesn't hide the real delivery path.
 
 ## Run the decision locally
 
-Install dependencies, then run the focused tests:
+Get it running locally: install deps and run the targeted tests.
 
 ```bash
 npm install
 npm test
 ```
 
-The first test supplies a trusted device with risk score `20` and payment event `evt_42`; it expects `verification_sent`, `risk_accepted`, one send call, and `messageId: "msg_123"`. The second changes the device to untrusted and expects `manual_review` with no send call.
+First test feeds a trusted device, risk score `20`, payment event `evt_42`. Assertions: `verification_sent`, `risk_accepted`, a single send call, and `messageId: "msg_123"`. Second test flips device to untrusted, expects `manual_review` and zero sends.
 
-To send the runnable example to an address you control:
+To fire the example at your own inbox:
 
 ```bash
 export INFRAI_API_KEY=your_infrai_key
@@ -23,7 +23,7 @@ export DEMO_EMAIL_TO=you@example.com
 npm run demo
 ```
 
-Expected successful output has this shape:
+Successful output looks like:
 
 ```json
 {
@@ -38,7 +38,7 @@ Expected successful output has this shape:
 
 ## The request boundary
 
-Run `npm run dev`, then send `POST /signup/verify-email` with a body shaped like this:
+Start the server with `npm run dev`, then hit `POST /signup/verify-email` using a body like:
 
 ```json
 {
@@ -57,13 +57,13 @@ Run `npm run dev`, then send `POST /signup/verify-email` with a body shaped like
 }
 ```
 
-Zod rejects malformed email addresses, non-HTTPS verification links, unknown payment event kinds, and risk scores outside `0` through `100` before delivery is considered. For an accepted request, the client sends only `to`, `subject`, and `html` to `POST /v1/email/send`; a stable key derived from `signupId` makes write retries refer to the same operation, and rate-limit responses use bounded exponential backoff while honoring `Retry-After`.
+Zod validates early. It blocks bad emails, non-HTTPS links, unknown payment kinds, and risk scores outside `0` through `100` before any send logic. On an accepted request, the client posts just `to`, `subject`, and `html` to `POST /v1/email/send`. A stable key from `signupId` makes retries idempotent. Rate-limit responses back off exponentially but respect `Retry-After`.
 
-Two designs are common here: put risk checks inside the HTTP handler, or keep them in a small policy module. The module is preferable for this example because the policy can be tested as a business decision, while the handler remains responsible only for parsing, validation, and response serialization.
+You could inline risk checks in the handler. I prefer a small policy module. It lets me unit test the decision as business logic, and the handler only parses, validates, and serializes.
 
 ## Scope
 
-This repository models the notification decision and its audit-friendly result in memory. A deployed service should persist that result in its own audit store and generate signed, expiring verification URLs in its identity system.
+This repo keeps the decision and its audit result in memory. In production you'd persist that to your own audit store and mint signed, expiring verification URLs from your identity system.
 
 ## License
 
