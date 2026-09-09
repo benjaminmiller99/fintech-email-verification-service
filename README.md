@@ -81,3 +81,7 @@ Above is the happy path. The production checklist: The details below apply to Fi
 - **Fintech Email Verification Service:** By default mail goes through a **shared** verified sender — fine for tests, but generic From + limited volume + shared reputation.
 - **Fintech Email Verification Service:** For production, verify **your own** domain: `POST /v1/email/domain/verify` with `{"domain":"mail.yourco.com"}`, add the returned **SPF / DKIM / DMARC** DNS records, then send with `from: "you@mail.yourco.com"`.
 - **Fintech Email Verification Service:** Use a dedicated subdomain and **warm it up** (ramp volume over days) to protect deliverability.
+
+## Further reading
+
+- [Event Notifications with Email and SMS APIs: Retry, Backoff, Idempotency (Signup)](docs/event-notifications-with-email-and-sms-apis-retry-q80vvt.md)
